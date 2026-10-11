@@ -109,7 +109,8 @@ void set_trees(RenderWidget             &renderer,
                const std::vector<float> &x,
                const std::vector<float> &y,
                const std::vector<float> &h,
-               const std::vector<float> &radius)
+               const std::vector<float> &radius,
+               const glm::vec3          &color)
 {
   qtr::Logger::log()->trace("qtr::set_trees");
 
@@ -117,7 +118,6 @@ void set_trees(RenderWidget             &renderer,
     throw std::invalid_argument("qtr::set_trees: vector sizes do not match");
 
   std::vector<BaseInstance> instances;
-  glm::vec3                 color = glm::vec3(0.f, 1.f, 0.f);
 
   for (size_t k = 0; k < x.size(); ++k)
   {

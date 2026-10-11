@@ -100,7 +100,10 @@ void set_trees(RenderWidget             &renderer,
                const std::vector<float> &x,
                const std::vector<float> &y,
                const std::vector<float> &h,
-               const std::vector<float> &radius);
+               const std::vector<float> &radius,
+               const glm::vec3          &color = glm::vec3(104.f / 255.f,
+                                                  159.f / 255.f,
+                                                  56.f / 255.f));
 
 void set_leaves(RenderWidget             &renderer,
                 const std::vector<float> &x,
