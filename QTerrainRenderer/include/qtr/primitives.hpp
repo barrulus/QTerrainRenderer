@@ -12,6 +12,29 @@ namespace qtr
 
 void generate_cube(Mesh &mesh, float x, float y, float z, float lx, float ly, float lz);
 
+// What generate_heightmap() computes before it creates the mesh: CPU only, so
+// it can be built on another thread than the one owning the GL context.
+struct HeightmapGeometry
+{
+  std::vector<Vertex> vertices;
+  std::vector<uint>   indices;
+  std::vector<int>    vertex_map;
+  float               hmin = 0.f;
+};
+
+HeightmapGeometry build_heightmap_geometry(const std::vector<float> &data,
+                                           int                       width,
+                                           int                       height,
+                                           float                     x,
+                                           float                     y,
+                                           float                     z,
+                                           float                     lx,
+                                           float                     ly,
+                                           float                     lz,
+                                           bool                      add_skirt = false,
+                                           float                     add_level = 0.f,
+                                           float exclude_below = -FLT_MAX);
+
 void generate_heightmap(Mesh                     &mesh,
                         const std::vector<float> &data,
                         int                       width,

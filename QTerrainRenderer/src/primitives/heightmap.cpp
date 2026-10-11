@@ -4,24 +4,23 @@
 
 #include "qtr/logger.hpp"
 #include "qtr/mesh.hpp"
+#include "qtr/primitives.hpp"
 
 namespace qtr
 {
 
-void generate_heightmap(Mesh                     &mesh,
-                        const std::vector<float> &data,
-                        int                       width,
-                        int                       height,
-                        float                     x,
-                        float                     y,
-                        float                     z,
-                        float                     lx,
-                        float                     ly,
-                        float                     lz,
-                        bool                      add_skirt,
-                        float                     add_level,
-                        float                     exclude_below,
-                        float                    *p_hmin)
+HeightmapGeometry build_heightmap_geometry(const std::vector<float> &data,
+                                           int                       width,
+                                           int                       height,
+                                           float                     x,
+                                           float                     y,
+                                           float                     z,
+                                           float                     lx,
+                                           float                     ly,
+                                           float                     lz,
+                                           bool                      add_skirt,
+                                           float                     add_level,
+                                           float                     exclude_below)
 {
   const int           count = width * height;
   std::vector<Vertex> vertices;
@@ -66,9 +65,6 @@ void generate_heightmap(Mesh                     &mesh,
       vertices.emplace_back(pos, glm::vec3(0, 1, 0), uv);
     }
   }
-
-  if (p_hmin)
-    *p_hmin = hmin;
 
   // ---- indices generation ----
   for (int j = 0; j < height - 1; ++j)
@@ -162,10 +158,43 @@ void generate_heightmap(Mesh                     &mesh,
   for (auto &v : vertices)
     v.normal = glm::normalize(v.normal);
 
-  mesh.create(std::move(vertices),
-              std::move(indices),
+  return {std::move(vertices), std::move(indices), std::move(vertex_map), hmin};
+}
+
+void generate_heightmap(Mesh                     &mesh,
+                        const std::vector<float> &data,
+                        int                       width,
+                        int                       height,
+                        float                     x,
+                        float                     y,
+                        float                     z,
+                        float                     lx,
+                        float                     ly,
+                        float                     lz,
+                        bool                      add_skirt,
+                        float                     add_level,
+                        float                     exclude_below,
+                        float                    *p_hmin)
+{
+  HeightmapGeometry geometry = build_heightmap_geometry(data,
+                                                        width,
+                                                        height,
+                                                        x,
+                                                        y,
+                                                        z,
+                                                        lx,
+                                                        ly,
+                                                        lz,
+                                                        add_skirt,
+                                                        add_level,
+                                                        exclude_below);
+  if (p_hmin)
+    *p_hmin = geometry.hmin;
+
+  mesh.create(std::move(geometry.vertices),
+              std::move(geometry.indices),
               /* store_cpu_copy */ true,
-              std::move(vertex_map));
+              std::move(geometry.vertex_map));
 }
 
 void update_heightmap_elevation(Mesh                     &mesh,

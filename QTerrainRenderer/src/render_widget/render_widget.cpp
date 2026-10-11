@@ -7,8 +7,11 @@
 
 #include <glm/gtc/constants.hpp>
 
+#include <QCoreApplication>
 #include <QFile>
 #include <QMessageBox>
+#include <QPointer>
+#include <QThreadPool>
 #include <QOpenGLFunctions>
 #include <QSurfaceFormat>
 
@@ -132,6 +135,7 @@ RenderWidget::~RenderWidget()
 void RenderWidget::clear()
 {
   qtr::Logger::log()->trace("RenderWidget::clear");
+  ++this->heightmap_request; // nothing built in the background is wanted now
 
   // nothing was created if GL init never completed, and the calls below would
   // run through unresolved 3.3-core function pointers
@@ -479,6 +483,9 @@ void RenderWidget::reset_camera_position()
 
 void RenderWidget::reset_mesh(const std::string &name)
 {
+  if (name == keys::mesh::hmap)
+    ++this->heightmap_request; // as for clear()
+
   this->makeCurrent();
   this->sp_mesh_manager->destroy(name);
   if (name == keys::mesh::hmap && this->sp_texture_manager->get(keys::tex::hmap))
@@ -489,6 +496,8 @@ void RenderWidget::reset_mesh(const std::string &name)
 
 void RenderWidget::reset_meshes()
 {
+  ++this->heightmap_request; // as for clear()
+
   this->makeCurrent();
   this->sp_mesh_manager->destroy_all();
   if (this->sp_texture_manager->get(keys::tex::hmap))
@@ -648,6 +657,59 @@ void RenderWidget::set_heightmap_geometry(const std::vector<float> &data,
                                           int                       height,
                                           bool                      add_skirt)
 {
+  ++this->heightmap_request; // outdates one being built in the background
+  this->apply_heightmap_geometry(data, width, height, add_skirt, std::nullopt);
+}
+
+void RenderWidget::set_heightmap_geometry_async(std::vector<float> data,
+                                                int                width,
+                                                int                height,
+                                                bool               add_skirt)
+{
+  qtr::Logger::log()->trace("RenderWidget::set_heightmap_geometry_async");
+
+  const int request = ++this->heightmap_request;
+  this->set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
+
+  // the mesh is built on a pool thread with the dimensions as they are now, and
+  // created on this thread, unless something else has been asked for meanwhile
+  QThreadPool::globalInstance()->start(
+      [self = QPointer<RenderWidget>(this),
+       request,
+       data = std::move(data),
+       width,
+       height,
+       add_skirt,
+       h0 = this->hmap_h0,
+       wx = this->hmap_wx,
+       h = this->hmap_h,
+       wy = this->hmap_wy]() mutable
+      {
+        auto sp_geometry = std::make_shared<HeightmapGeometry>(
+            build_heightmap_geometry(data, width, height, 0.f, h0, 0.f, wx, h, wy, add_skirt));
+        auto sp_data = std::make_shared<std::vector<float>>(std::move(data));
+
+        QMetaObject::invokeMethod(
+            qApp,
+            [self, request, sp_geometry, sp_data, width, height, add_skirt]()
+            {
+              if (self && request == self->heightmap_request)
+                self->apply_heightmap_geometry(*sp_data,
+                                               width,
+                                               height,
+                                               add_skirt,
+                                               std::move(*sp_geometry));
+            },
+            Qt::QueuedConnection);
+      });
+}
+
+void RenderWidget::apply_heightmap_geometry(const std::vector<float>        &data,
+                                            int                              width,
+                                            int                              height,
+                                            bool                             add_skirt,
+                                            std::optional<HeightmapGeometry> geometry)
+{
   qtr::Logger::log()->trace("RenderWidget::set_heightmap_geometry");
 
   if (this->initial_gl_done)
@@ -656,20 +718,25 @@ void RenderWidget::set_heightmap_geometry(const std::vector<float> &data,
   const float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
   this->set_aspect_ratio(aspect_ratio);
 
-  generate_heightmap(*this->sp_mesh_manager->get_mesh(keys::mesh::hmap),
-                     data,
-                     width,
-                     height,
-                     0.f,
-                     this->hmap_h0,
-                     0.f,
-                     this->hmap_wx,
-                     this->hmap_h,
-                     this->hmap_wy,
-                     add_skirt,
-                     /* add_level */ 0.f,
-                     /* exclude_below */ -FLT_MAX,
-                     &this->hmap_hmin);
+  // built in the background, or here
+  if (!geometry)
+    geometry = build_heightmap_geometry(data,
+                                        width,
+                                        height,
+                                        0.f,
+                                        this->hmap_h0,
+                                        0.f,
+                                        this->hmap_wx,
+                                        this->hmap_h,
+                                        this->hmap_wy,
+                                        add_skirt);
+
+  this->hmap_hmin = geometry->hmin;
+  this->sp_mesh_manager->get_mesh(keys::mesh::hmap)
+      ->create(std::move(geometry->vertices),
+               std::move(geometry->indices),
+               /* store_cpu_copy */ true,
+               std::move(geometry->vertex_map));
 
   // regenerate plane (keep the plane square, use hmap_wx for both
   // directions)
