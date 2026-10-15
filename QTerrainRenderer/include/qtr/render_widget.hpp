@@ -8,6 +8,7 @@
 
 #include <any>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -26,6 +27,7 @@
 #include "qtr/light.hpp"
 #include "qtr/mesh.hpp"
 #include "qtr/mesh_manager.hpp"
+#include "qtr/primitives.hpp"
 #include "qtr/shader_manager.hpp"
 #include "qtr/texture.hpp"
 #include "qtr/texture_manager.hpp"
@@ -163,6 +165,14 @@ public:
                               int                       height,
                               bool                      add_skirt = true);
 
+  // Same, without blocking: the mesh is built on a pool thread and replaces the
+  // current one once it is ready, unless the heightmap has been set, reset or
+  // cleared meanwhile.
+  void set_heightmap_geometry_async(std::vector<float> data,
+                                    int                width,
+                                    int                height,
+                                    bool               add_skirt = true);
+
   void set_water_geometry(const std::vector<float> &data,
                           int                       width,
                           int                       height,
@@ -254,6 +264,11 @@ protected:
 private:
   // --- Helpers
   void reset_camera_position();
+  void apply_heightmap_geometry(const std::vector<float>        &data,
+                                int                              width,
+                                int                              height,
+                                bool                             add_skirt,
+                                std::optional<HeightmapGeometry> geometry);
 
   // --- General
   std::string title;
@@ -311,6 +326,7 @@ private:
   int   current_width = 0;
   int   current_height = 0;
   bool  current_add_skirt_state = true;
+  int   heightmap_request = 0; // the latest one, see set_heightmap_geometry_async()
 
   // --- Rendering parameters
 
