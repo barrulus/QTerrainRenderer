@@ -94,7 +94,8 @@ void set_rocks(RenderWidget             &renderer,
                const std::vector<float> &x,
                const std::vector<float> &y,
                const std::vector<float> &h,
-               const std::vector<float> &radius);
+               const std::vector<float> &radius,
+               const glm::vec3          &color = glm::vec3(0.25f, 0.25f, 0.25f));
 
 void set_trees(RenderWidget             &renderer,
                const std::vector<float> &x,
