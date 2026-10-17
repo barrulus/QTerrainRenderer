@@ -200,7 +200,11 @@ void RenderWidget::render_void_grid(const glm::mat4 &model,
   // against depth, never written to it; always filled, even in wireframe
   glDepthMask(GL_FALSE);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // The grid fades into the opaque scene, not through the widget.
+  glBlendFuncSeparate(GL_SRC_ALPHA,
+                      GL_ONE_MINUS_SRC_ALPHA,
+                      GL_ONE,
+                      GL_ONE_MINUS_SRC_ALPHA);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   p_shader->bind();

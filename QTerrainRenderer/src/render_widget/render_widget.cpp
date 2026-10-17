@@ -881,7 +881,12 @@ void RenderWidget::setup_gl_state()
   glClearColor(clear, clear, clear, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // Blend translucent surfaces into the opaque scene without making the
+  // widget itself translucent when Qt composites its framebuffer.
+  glBlendFuncSeparate(GL_SRC_ALPHA,
+                      GL_ONE_MINUS_SRC_ALPHA,
+                      GL_ONE,
+                      GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_BLEND);
   glEnable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
