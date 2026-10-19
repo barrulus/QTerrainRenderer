@@ -10,6 +10,10 @@
 #include <imgui.h>
 
 #include "qtr/config.hpp"
+#include "qtr/profiling.hpp"
+#include "gpu_frame_profiler.hpp"
+#include <cstdint>
+#include <string>
 #include "qtr/imgui_widgets.hpp"
 #include "qtr/logger.hpp"
 #include "qtr/mesh.hpp"
@@ -28,9 +32,16 @@ void RenderWidget::paintGL()
   if (QOpenGLContext::currentContext() != this->context())
     this->makeCurrent();
 
+  QTR_PROFILE_ZONE("QTR::paintGL");
+  QTR_PROFILE_TEXT("renderer=" + std::to_string(reinterpret_cast<std::uintptr_t>(this)));
+
   this->update_time();
   this->update_light();
   this->update_camera();
+
+#ifdef QTR_ENABLE_TRACY
+  GpuFrameScope gpu_frame(this->gpu_profiler.get());
+#endif
 
   // scene and UI
   switch (this->render_type)

@@ -8,6 +8,7 @@
 
 #include <any>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_set>
@@ -34,6 +35,9 @@
 
 namespace qtr
 {
+#ifdef QTR_ENABLE_TRACY
+class GpuFrameProfiler;
+#endif
 
 enum RenderType : int
 {
@@ -326,6 +330,9 @@ private:
   int   current_width = 0;
   int   current_height = 0;
   bool  current_add_skirt_state = true;
+#ifdef QTR_ENABLE_TRACY
+  std::unique_ptr<GpuFrameProfiler> gpu_profiler;
+#endif
   int   heightmap_request = 0; // the latest one, see set_heightmap_geometry_async()
 
   // --- Rendering parameters

@@ -1,5 +1,6 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
    License. The full license is in the file LICENSE, distributed with this software. */
+#include "qtr/profiling.hpp"
 #include "qtr/mesh.hpp"
 #include "qtr/logger.hpp"
 
@@ -54,6 +55,7 @@ void Mesh::create(std::vector<Vertex> vertices_in,
                   bool                store_cpu_copy,
                   std::vector<int>    vertex_map_in)
 {
+  QTR_PROFILE_ZONE("QTR::mesh.upload");
   bool ok = this->initializeOpenGLFunctions();
   this->destroy();
 

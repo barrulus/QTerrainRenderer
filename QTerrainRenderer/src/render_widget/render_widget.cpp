@@ -1,9 +1,14 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
    License. The full license is in the file LICENSE, distributed with this software. */
 #include "qtr/windows_patch.hpp"
+#include "qtr/profiling.hpp"
 
 #include <algorithm>
+#include <cstdint>
+#include <format>
 #include <stdexcept>
+
+#include "gpu_frame_profiler.hpp"
 
 #include <glm/gtc/constants.hpp>
 
@@ -115,6 +120,14 @@ RenderWidget::RenderWidget(const std::string &_title, QWidget *parent)
 
 RenderWidget::~RenderWidget()
 {
+#ifdef QTR_ENABLE_TRACY
+  if (this->gpu_profiler)
+  {
+    this->makeCurrent();
+    this->gpu_profiler.reset();
+    this->doneCurrent();
+  }
+#endif
   if (this->context() && this->imgui_context)
   {
     // make THIS widget's GL context current before the ImGui backend
@@ -200,6 +213,7 @@ Mesh &RenderWidget::get_water_mesh()
 
 void RenderWidget::initializeGL()
 {
+  QTR_PROFILE_ZONE("QTR::initializeGL");
   qtr::Logger::log()->trace("RenderWidget::initializeGL");
 
   this->makeCurrent();
@@ -458,6 +472,18 @@ void RenderWidget::initializeGL()
       }
   }
 
+#ifdef QTR_ENABLE_TRACY
+  this->gpu_profiler = std::make_unique<GpuFrameProfiler>(this->context(), this);
+  connect(this->context(), &QOpenGLContext::aboutToBeDestroyed, this,
+          [this, profile_context = this->context()]
+          {
+            if (this->context() != profile_context) return;
+            this->makeCurrent();
+            this->gpu_profiler.reset();
+            this->doneCurrent();
+          });
+#endif
+
   // OpenGL3 backend
   ImGui_ImplOpenGL3_Init("#version 330");
 
@@ -666,15 +692,21 @@ void RenderWidget::set_heightmap_geometry_async(std::vector<float> data,
                                                 int                height,
                                                 bool               add_skirt)
 {
+  QTR_PROFILE_ZONE("QTR::set_heightmap_geometry_async");
   qtr::Logger::log()->trace("RenderWidget::set_heightmap_geometry_async");
 
   const int request = ++this->heightmap_request;
+  QTR_PROFILE_TEXT(std::format("renderer={} request={} shape={}x{}",
+                              reinterpret_cast<std::uintptr_t>(this), request, width, height));
   this->set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
 
   // the mesh is built on a pool thread with the dimensions as they are now, and
   // created on this thread, unless something else has been asked for meanwhile
   QThreadPool::globalInstance()->start(
       [self = QPointer<RenderWidget>(this),
+#ifdef QTR_ENABLE_TRACY
+       profile_owner = reinterpret_cast<std::uintptr_t>(this),
+#endif
        request,
        data = std::move(data),
        width,
@@ -685,14 +717,25 @@ void RenderWidget::set_heightmap_geometry_async(std::vector<float> data,
        h = this->hmap_h,
        wy = this->hmap_wy]() mutable
       {
+        QTR_PROFILE_ZONE("QTR::heightmap.worker");
+        QTR_PROFILE_TEXT(std::format("renderer={} request={} shape={}x{}",
+                                    profile_owner, request, width, height));
         auto sp_geometry = std::make_shared<HeightmapGeometry>(
             build_heightmap_geometry(data, width, height, 0.f, h0, 0.f, wx, h, wy, add_skirt));
         auto sp_data = std::make_shared<std::vector<float>>(std::move(data));
 
         QMetaObject::invokeMethod(
             qApp,
-            [self, request, sp_geometry, sp_data, width, height, add_skirt]()
+            [self,
+#ifdef QTR_ENABLE_TRACY
+             profile_owner,
+#endif
+             request, sp_geometry, sp_data, width, height, add_skirt]()
             {
+              QTR_PROFILE_ZONE("QTR::heightmap.deliver");
+              QTR_PROFILE_TEXT(std::format("renderer={} request={} accepted={}",
+                                          profile_owner, request,
+                                          self && request == self->heightmap_request));
               if (self && request == self->heightmap_request)
                 self->apply_heightmap_geometry(*sp_data,
                                                width,
@@ -710,6 +753,7 @@ void RenderWidget::apply_heightmap_geometry(const std::vector<float>        &dat
                                             bool                             add_skirt,
                                             std::optional<HeightmapGeometry> geometry)
 {
+  QTR_PROFILE_ZONE("QTR::apply_heightmap_geometry");
   qtr::Logger::log()->trace("RenderWidget::set_heightmap_geometry");
 
   if (this->initial_gl_done)

@@ -1,6 +1,7 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
  License. The full license is in the file LICENSE, distributed with this software. */
 #include "qtr/windows_patch.hpp"
+#include "qtr/profiling.hpp"
 
 #include "qtr/logger.hpp"
 #include "qtr/texture.hpp"
@@ -67,6 +68,7 @@ void Texture::destroy()
 
 bool Texture::from_float_vector(const std::vector<float> &data, int new_width)
 {
+  QTR_PROFILE_ZONE("QTR::texture.from_float_vector");
   this->initializeOpenGLFunctions();
   // QOpenGLFunctions_3_3_Core::initializeOpenGLFunctions();
   this->destroy();
@@ -99,6 +101,7 @@ bool Texture::from_float_vector(const std::vector<float> &data, int new_width)
 
 bool Texture::from_image_8bit_grayscale(const std::vector<uint8_t> &img, int new_width)
 {
+  QTR_PROFILE_ZONE("QTR::texture.from_image_8bit_grayscale");
   this->initializeOpenGLFunctions();
   // QOpenGLFunctions_3_3_Core::initializeOpenGLFunctions();
   this->destroy();
@@ -131,6 +134,7 @@ bool Texture::from_image_8bit_grayscale(const std::vector<uint8_t> &img, int new
 
 bool Texture::from_image_8bit_rgb(const std::vector<uint8_t> &img, int new_width)
 {
+  QTR_PROFILE_ZONE("QTR::texture.from_image_8bit_rgb");
   this->initializeOpenGLFunctions();
   // QOpenGLFunctions_3_3_Core::initializeOpenGLFunctions();
   this->destroy();
@@ -168,6 +172,7 @@ bool Texture::from_image_8bit_rgb(const std::vector<uint8_t> &img, int new_width
 
 bool Texture::from_image_8bit_rgba(const std::vector<uint8_t> &img, int new_width)
 {
+  QTR_PROFILE_ZONE("QTR::texture.from_image_8bit_rgba");
   this->initializeOpenGLFunctions();
   // QOpenGLFunctions_3_3_Core::initializeOpenGLFunctions();
   this->destroy();
@@ -205,6 +210,7 @@ bool Texture::from_image_8bit_rgba(const std::vector<uint8_t> &img, int new_widt
 
 bool Texture::from_image_16bit_grayscale(const std::vector<uint16_t> &img, int new_width)
 {
+  QTR_PROFILE_ZONE("QTR::texture.from_image_16bit_grayscale");
   this->initializeOpenGLFunctions();
   // QOpenGLFunctions_3_3_Core::initializeOpenGLFunctions();
   this->destroy();

@@ -1,6 +1,7 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
    License. The full license is in the file LICENSE, distributed with this software. */
 #include "qtr/windows_patch.hpp"
+#include "qtr/profiling.hpp"
 
 #include "qtr/render_widget.hpp"
 
@@ -10,6 +11,7 @@ namespace qtr
 void RenderWidget::render_shadow_map(const glm::mat4 &model,
                                      glm::mat4       &light_space_matrix)
 {
+  QTR_PROFILE_ZONE("QTR::render_shadow_map");
   // shadow depth pass, camera at the light position
   this->camera_shadow_pass.position = this->light.position;
   this->camera_shadow_pass.near_plane = 0.f;

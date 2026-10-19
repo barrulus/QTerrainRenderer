@@ -1,6 +1,7 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
    License. The full license is in the file LICENSE, distributed with this software. */
 #include "qtr/windows_patch.hpp"
+#include "qtr/profiling.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -24,6 +25,7 @@ namespace qtr
 
 void RenderWidget::render_scene_render_3d()
 {
+  QTR_PROFILE_ZONE("QTR::render_scene_render_3d");
   if (QOpenGLContext::currentContext() != this->context())
     this->makeCurrent();
 
@@ -188,6 +190,7 @@ void RenderWidget::render_void_grid(const glm::mat4 &model,
                                     const glm::mat4 &view,
                                     const glm::mat4 &projection)
 {
+  QTR_PROFILE_ZONE("QTR::render_void_grid");
   auto *grid_drawable = this->sp_mesh_manager->get_drawable(keys::mesh::void_grid);
   if (!grid_drawable)
     return;
@@ -226,6 +229,7 @@ void RenderWidget::render_void_grid(const glm::mat4 &model,
 
 void RenderWidget::render_skybox(const glm::mat4 &view, const glm::mat4 &projection)
 {
+  QTR_PROFILE_ZONE("QTR::render_skybox");
   if (!this->show_skybox)
     return;
 
@@ -281,6 +285,7 @@ void RenderWidget::render_skybox(const glm::mat4 &view, const glm::mat4 &project
 
 void RenderWidget::render_ui_render_3d()
 {
+  QTR_PROFILE_ZONE("QTR::render_ui_render_3d");
   // must precede any ImGui call: destroying another RenderWidget leaves the
   // global current context null (its destructor destroys the context it
   // selected), and GetIO() dereferences the global

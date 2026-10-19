@@ -2,6 +2,7 @@
    License. The full license is in the file LICENSE, distributed with this software. */
 #include <glm/gtc/constants.hpp>
 
+#include "qtr/profiling.hpp"
 #include "qtr/logger.hpp"
 #include "qtr/mesh.hpp"
 #include "qtr/primitives.hpp"
@@ -22,6 +23,7 @@ HeightmapGeometry build_heightmap_geometry(const std::vector<float> &data,
                                            float                     add_level,
                                            float                     exclude_below)
 {
+  QTR_PROFILE_ZONE("QTR::heightmap.build");
   const int           count = width * height;
   std::vector<Vertex> vertices;
   std::vector<uint>   indices;

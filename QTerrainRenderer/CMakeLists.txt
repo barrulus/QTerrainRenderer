@@ -34,6 +34,12 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
+if(QTR_ENABLE_TRACY)
+  find_package(Tracy CONFIG REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Tracy::TracyClient)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC QTR_ENABLE_TRACY)
+endif()
+
 target_include_directories(
   ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include>)

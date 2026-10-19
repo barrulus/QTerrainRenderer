@@ -4,6 +4,8 @@ project(
   VERSION 0.0.0
   LANGUAGES CXX)
 
+option(QTR_ENABLE_TRACY "Enable Tracy CPU zones and asynchronous GPU frame plots" OFF)
+
 # --- Global output paths
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

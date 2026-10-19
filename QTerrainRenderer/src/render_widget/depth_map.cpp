@@ -1,6 +1,7 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
    License. The full license is in the file LICENSE, distributed with this software. */
 #include "qtr/windows_patch.hpp"
+#include "qtr/profiling.hpp"
 
 #include "qtr/render_widget.hpp"
 
@@ -11,6 +12,7 @@ void RenderWidget::render_depth_map(const glm::mat4 &model,
                                     const glm::mat4 &view,
                                     const glm::mat4 &projection)
 {
+  QTR_PROFILE_ZONE("QTR::render_depth_map");
   QOpenGLShaderProgram *p_shader = this->sp_shader_manager->get("depth_map")->get();
 
   if (p_shader)

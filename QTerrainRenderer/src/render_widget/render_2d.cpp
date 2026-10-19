@@ -1,6 +1,7 @@
 /* Copyright (c) 2025 Otto Link. Distributed under the terms of the GNU General Public
    License. The full license is in the file LICENSE, distributed with this software. */
 #include "qtr/windows_patch.hpp"
+#include "qtr/profiling.hpp"
 
 #include <stdexcept>
 
@@ -22,6 +23,7 @@ namespace qtr
 
 void RenderWidget::render_scene_render_2d()
 {
+  QTR_PROFILE_ZONE("QTR::render_scene_render_2d");
   // model
   glm::mat4 model = glm::mat4(1.0f);
   model = glm::scale(model, glm::vec3(1.f, this->scale_h, 1.f));
@@ -86,6 +88,7 @@ void RenderWidget::render_scene_render_2d()
 
 void RenderWidget::render_ui_render_2d()
 {
+  QTR_PROFILE_ZONE("QTR::render_ui_render_2d");
   ImGui::SetCurrentContext(this->imgui_context);
 
   {
